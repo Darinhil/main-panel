@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Main Panel Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a quiet admin tool. Header with who is signed in, tabs, then cards and tables. The approval tracker is the one strong visual. */
+:root {
+  --bg: #f3f4f1;
+  --surface: #ffffff;
+  --ink: #1b2220;
+  --muted: #5b6662;
+  --line: #d8ddd8;
+  --accent: #0b6b5d;
+  --accent-soft: #e0efea;
+  --good: #2b7a32;
+  --good-soft: #e3f1e3;
+  --warn: #9a5b00;
+  --warn-soft: #fbefd9;
+  --bad: #b3261e;
+  --bad-soft: #f9e3e1;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111513; --surface: #1a201e; --ink: #e6ebe8; --muted: #9ba6a1; --line: #2d3532;
+    --accent: #52c3ab; --accent-soft: #163a33; --good: #74c47a; --good-soft: #17301a;
+    --warn: #e3a64a; --warn-soft: #3a2b12; --bad: #f08077; --bad-soft: #3c1b19;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111513; --surface: #1a201e; --ink: #e6ebe8; --muted: #9ba6a1; --line: #2d3532;
+  --accent: #52c3ab; --accent-soft: #163a33; --good: #74c47a; --good-soft: #17301a;
+  --warn: #e3a64a; --warn-soft: #3a2b12; --bad: #f08077; --bad-soft: #3c1b19;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.25; }
+h1 { font-size: 26px; font-weight: 700; }
+h2 { font-size: 18px; font-weight: 600; }
+h3 { font-size: 15px; font-weight: 600; }
+p { margin: 0; }
+.mono { font-family: var(--font-mono); font-size: 13px; }
+.muted { color: var(--muted); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.banner { background: var(--accent-soft); color: var(--ink); font-size: 13px; padding: 8px 20px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 14px 20px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.brand { font-weight: 700; font-size: 17px; display: flex; align-items: center; gap: 10px; }
+.brand-mark { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); }
+.who { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 14px; }
+main { max-width: 1120px; margin: 0 auto; padding: 24px 20px 64px; display: grid; gap: 20px; }
+
+.btn { border: 1px solid var(--line); background: var(--surface); padding: 7px 14px; border-radius: 8px; font-weight: 500; font-size: 14px; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--bad); }
+.btn.good { background: var(--good); border-color: var(--good); color: var(--surface); }
+.btn.bad { background: var(--surface); border-color: var(--bad); color: var(--bad); }
+.btn.small { padding: 4px 10px; font-size: 13px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+.tab { background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 14px; font-weight: 500; color: var(--muted); margin-bottom: -1px; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.count { display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 6px; border-radius: 10px; background: var(--accent); color: var(--surface); font-size: 12px; text-align: center; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 14px; align-content: start; }
+.card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.grid2 { display: grid; grid-template-columns: minmax(260px, 340px) 1fr; gap: 20px; align-items: start; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; align-items: start; }
+@media (max-width: 820px) { .grid2 { grid-template-columns: 1fr; } }
+
+.field { display: grid; gap: 4px; }
+.field label { font-size: 13px; font-weight: 500; color: var(--muted); }
+.field input, .field select, .field textarea { border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 8px 10px; width: 100%; }
+.field textarea { min-height: 76px; resize: vertical; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.error { color: var(--bad); font-size: 13px; }
+.note { font-size: 13px; padding: 10px 12px; border-radius: 8px; background: var(--warn-soft); color: var(--ink); border-left: 3px solid var(--warn); }
+.note.info { background: var(--accent-soft); border-left-color: var(--accent); }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; white-space: nowrap; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
+tr.inactive td { color: var(--muted); }
+td.num { font-variant-numeric: tabular-nums; text-align: right; }
+
+.chip { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; background: var(--accent-soft); color: var(--accent); }
+.chip.good { background: var(--good-soft); color: var(--good); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.bad { background: var(--bad-soft); color: var(--bad); }
+.chip.plain { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+
+/* login */
+.login { display: grid; gap: 18px; }
+.people { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.person { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 6px; }
+.person:hover:not(:disabled) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.person .name { font-weight: 600; }
+.person .meta { font-size: 13px; color: var(--muted); }
+
+/* item list */
+.items { display: grid; gap: 10px; }
+.item { text-align: left; width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; }
+.item:hover { border-color: var(--accent); }
+.item .title { font-weight: 600; }
+.item .sub { font-size: 13px; color: var(--muted); }
+.empty { padding: 28px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 12px; }
+
+/* tracker */
+.tracker { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); }
+.tracker li { position: relative; display: grid; justify-items: center; gap: 4px; text-align: center; font-size: 12px; color: var(--muted); }
+.tracker li::before { content: ""; position: absolute; top: 11px; left: -50%; width: 100%; height: 2px; background: var(--line); z-index: 0; }
+.tracker li:first-child::before { display: none; }
+.tracker li.done::before, .tracker li.current::before { background: var(--accent); }
+.tracker .dot { position: relative; z-index: 1; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.tracker li.done .dot { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.tracker li.current .dot { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.tracker li.current { color: var(--ink); font-weight: 600; }
+.tracker li.returned .dot { border-color: var(--bad); background: var(--bad-soft); color: var(--bad); }
+.tracker li.returned { color: var(--bad); font-weight: 600; }
+.tracker.mini { width: 220px; }
+.tracker.mini li { font-size: 0; }
+.tracker.mini .dot { width: 14px; height: 14px; font-size: 0; }
+.tracker.mini li::before { top: 6px; }
+.tracker .by { font-size: 11px; color: var(--muted); font-weight: 400; }
+
+/* flow tab */
+.flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.stage { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; gap: 4px; align-content: start; font-size: 13px; }
+.stage .s-name { font-weight: 600; font-size: 14px; }
+.stage.gap { border-color: var(--warn); background: var(--warn-soft); }
+@media (max-width: 700px) { .flow { grid-template-columns: 1fr; } }
+
+/* history */
+.history { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.history li { display: grid; grid-template-columns: 10px 1fr; gap: 10px; font-size: 14px; }
+.history .bar { width: 4px; border-radius: 2px; background: var(--line); justify-self: center; }
+.history .bar.approved, .history .bar.submitted { background: var(--accent); }
+.history .bar.returned { background: var(--bad); }
+.history .bar.final { background: var(--good); }
+.history .c { color: var(--muted); font-style: italic; }
+
+/* modal */
+.modal { position: fixed; inset: 0; background: rgb(0 0 0 / .45); display: grid; place-items: start center; padding: 40px 16px; overflow-y: auto; z-index: 20; }
+.modal[hidden] { display: none; }
+.sheet { background: var(--surface); color: var(--ink); border-radius: 14px; width: min(720px, 100%); padding: 24px; display: grid; gap: 18px; border: 1px solid var(--line); }
+.sheet-head { display: flex; justify-content: space-between; align-items: start; gap: 16px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 0; }
+.facts div { display: grid; gap: 2px; }
+.facts dt { font-size: 12px; color: var(--muted); }
+.facts dd { margin: 0; font-weight: 500; }
+.action-box { border: 1px solid var(--accent); border-radius: 12px; padding: 16px; display: grid; gap: 12px; background: var(--accent-soft); }
+.action-box.blocked { border-color: var(--warn); background: var(--warn-soft); }
+
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 30; max-width: calc(100% - 32px); }
+.toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+</head>
+<body>
+<div class="banner">
+  <span>Clickable prototype with example people and items. Changes are kept only until you reload or reset.</span>
+  <button class="linkbtn" data-act="reset">Reset demo</button>
+</div>
+<header class="top">
+  <div class="brand"><span class="brand-mark" aria-hidden="true"></span>Main Panel</div>
+  <div class="who" id="who"></div>
+</header>
+<main id="app"></main>
+<div id="modal" class="modal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="modal-title" id="sheet"></div>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+const STAGES = ['Maker', 'Checker', 'Reviewer', 'Verifier', 'Approver'];
+const STAGE_DO = ['Creates and submits', 'Checks for mistakes', 'Reviews again', 'Confirms it is correct', 'Gives the final yes'];
+const ROLES = ['System Administrator', 'Operations Lead', 'System Engineer', 'Maintenance Tech', 'Viewer'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function seed() {
+  return {
+    positions: ['Executive Director', 'Senior Manager', 'Manager', 'Project Officer', 'Coordinator', 'Officer', 'Assistant', 'Volunteer', 'Intern', 'Others'],
+    teams: ['Management', 'Operation', 'CREFA', 'ESCM', 'AWR', 'CLIMART', 'GROWTH-2', 'PV-SKILL', 'FNC', 'CHILL', 'SIDA CSO'],
+    users: [
+      { id: 'u1', surname: 'Sok', first: 'Dara', username: 'dara.sok', email: 'dara.sok@example.org', phone: '012 345 678', role: 'System Administrator', position: 'Manager', team: 'Management', authority: '', active: true },
+      { id: 'u2', surname: 'Chan', first: 'Sophea', username: 'sophea.chan', email: 'sophea.chan@example.org', phone: '012 111 201', role: 'Maintenance Tech', position: 'Project Officer', team: 'CREFA', authority: 'Maker', active: true },
+      { id: 'u3', surname: 'Lim', first: 'Vanna', username: 'vanna.lim', email: 'vanna.lim@example.org', phone: '012 111 202', role: 'Maintenance Tech', position: 'Coordinator', team: 'CREFA', authority: 'Checker', active: true },
+      { id: 'u4', surname: 'Keo', first: 'Rithy', username: 'rithy.keo', email: 'rithy.keo@example.org', phone: '012 111 203', role: 'Operations Lead', position: 'Manager', team: 'CREFA', authority: 'Reviewer', active: true },
+      { id: 'u5', surname: 'Heng', first: 'Malis', username: 'malis.heng', email: 'malis.heng@example.org', phone: '012 111 204', role: 'Operations Lead', position: 'Senior Manager', team: 'CREFA', authority: 'Verifier', active: true },
+      { id: 'u6', surname: 'Meas', first: 'Sovann', username: 'sovann.meas', email: 'sovann.meas@example.org', phone: '012 111 205', role: 'Operations Lead', position: 'Executive Director', team: 'CREFA', authority: 'Approver', active: true },
+      { id: 'u7', surname: 'Ny', first: 'Chenda', username: 'chenda.ny', email: 'chenda.ny@example.org', phone: '012 111 206', role: 'Maintenance Tech', position: 'Officer', team: 'ESCM', authority: 'Maker', active: true },
+      { id: 'u8', surname: 'Pich', first: 'Bopha', username: 'bopha.pich', email: 'bopha.pich@example.org', phone: '012 111 207', role: 'Viewer', position: 'Intern', team: '', authority: '', active: true }
+    ],
+    items: [
+      { id: 'PR-001', title: 'Field training supplies', amount: 1250, team: 'CREFA', maker: 'u2', desc: 'Notebooks, markers and flip charts for 3 village trainings.', stage: 2, status: 'progress', actors: ['u2', 'u3'],
+        history: [ { who: 'u2', stage: 'Maker', action: 'submitted', comment: '', time: '10 Nov, 09:12' },
+                   { who: 'u3', stage: 'Checker', action: 'approved', comment: 'Prices match the quote.', time: '10 Nov, 14:40' } ] },
+      { id: 'PR-002', title: 'Laptop for new officer', amount: 890, team: 'CREFA', maker: 'u2', desc: 'One laptop for the new project officer starting in December.', stage: 1, status: 'progress', actors: ['u2'],
+        history: [ { who: 'u2', stage: 'Maker', action: 'submitted', comment: '', time: '11 Nov, 10:05' } ] },
+      { id: 'PR-003', title: 'Workshop venue booking', amount: 2400, team: 'CREFA', maker: 'u2', desc: 'Two-day partner workshop, venue and lunch for 40 people.', stage: 0, status: 'returned', actors: ['u2'],
+        history: [ { who: 'u2', stage: 'Maker', action: 'submitted', comment: '', time: '9 Nov, 08:30' },
+                   { who: 'u3', stage: 'Checker', action: 'returned', comment: 'Please attach the venue quote.', time: '9 Nov, 11:02' } ] },
+      { id: 'PR-004', title: 'Printing for community report', amount: 320, team: 'CREFA', maker: 'u2', desc: '200 copies of the annual community report.', stage: 4, status: 'approved', actors: ['u2', 'u3', 'u4', 'u5', 'u6'],
+        history: [ { who: 'u2', stage: 'Maker', action: 'submitted', comment: '', time: '4 Nov, 09:00' },
+                   { who: 'u3', stage: 'Checker', action: 'approved', comment: '', time: '4 Nov, 13:15' },
+                   { who: 'u4', stage: 'Reviewer', action: 'approved', comment: '', time: '5 Nov, 08:47' },
+                   { who: 'u5', stage: 'Verifier', action: 'approved', comment: 'Budget line confirmed.', time: '5 Nov, 16:20' },
+                   { who: 'u6', stage: 'Approver', action: 'final', comment: '', time: '6 Nov, 10:02' } ] },
+      { id: 'PR-005', title: 'Seed stock for pilot farms', amount: 1800, team: 'ESCM', maker: 'u7', desc: 'Rice and vegetable seed for 12 pilot farms.', stage: 1, status: 'progress', actors: ['u7'],
+        history: [ { who: 'u7', stage: 'Maker', action: 'submitted', comment: '', time: '11 Nov, 15:20' } ] }
+    ],
+    audit: [
+      { time: '11 Nov, 15:20', who: 'u7', action: 'Submitted item', detail: 'PR-005 Seed stock for pilot farms' },
+      { time: '11 Nov, 10:05', who: 'u2', action: 'Submitted item', detail: 'PR-002 Laptop for new officer' },
+      { time: '10 Nov, 14:40', who: 'u3', action: 'Approved as Checker', detail: 'PR-001 Field training supplies' },
+      { time: '10 Nov, 09:12', who: 'u2', action: 'Submitted item', detail: 'PR-001 Field training supplies' },
+      { time: '8 Nov, 16:00', who: 'u1', action: 'Created user', detail: 'Pich Bopha (bopha.pich)' }
+    ],
+    nextItem: 6,
+    nextUser: 9
+  };
+}
+
+let S = seed();
+let me = null;
+let tab = null;
+
+/* ---------- helpers ---------- */
+const $ = sel => document.querySelector(sel);
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function user(id) { return S.users.find(u => u.id === id); }
+function name(id) { const u = user(id); return u ? u.first + ' ' + u.surname : 'Unknown'; }
+function isAdmin(u) { return u && u.role === 'System Administrator'; }
+function money(n) { return '$' + Number(n).toLocaleString('en-US'); }
+function now() { const d = new Date(); return d.getDate() + ' ' + MONTHS[d.getMonth()] + ', ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+function log(action, detail) { S.audit.unshift({ time: now(), who: me ? me.id : '', action, detail }); }
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2600); }
+function opts(list, sel, blank) { return (blank !== undefined ? `<option value="">${esc(blank)}</option>` : '') + list.map(v => `<option${v === sel ? ' selected' : ''}>${esc(v)}</option>`).join(''); }
+
+function canAct(u, it) { return u && u.active && u.authority && it.status === 'progress' && it.team === u.team && STAGES[it.stage] === u.authority && !it.actors.includes(u.id); }
+function blockedBySelf(u, it) { return u && u.authority && it.status === 'progress' && it.team === u.team && STAGES[it.stage] === u.authority && it.actors.includes(u.id); }
+function canResubmit(u, it) { return u && it.status === 'returned' && it.maker === u.id; }
+function holders(team, stage) { return S.users.filter(u => u.active && u.team === team && u.authority === stage); }
+
+function statusChip(it) {
+  if (it.status === 'approved') return '<span class="chip good">Approved</span>';
+  if (it.status === 'returned') return '<span class="chip bad">Returned to Maker</span>';
+  if (holders(it.team, STAGES[it.stage]).length === 0) return `<span class="chip warn">Stuck: no ${STAGES[it.stage]}</span>`;
+  return `<span class="chip">With ${STAGES[it.stage]}</span>`;
+}
+
+function tracker(it, mini) {
+  const lastBy = {};
+  it.history.forEach(h => { if (h.action !== 'returned') lastBy[h.stage] = h.who; });
+  return `<ol class="tracker${mini ? ' mini' : ''}" aria-label="Approval progress">` + STAGES.map((s, i) => {
+    let cls = '';
+    if (it.status === 'approved' || (it.status === 'progress' && i < it.stage)) cls = 'done';
+    else if (it.status === 'progress' && i === it.stage) cls = 'current';
+    else if (it.status === 'returned' && i === 0) cls = 'returned';
+    const mark = cls === 'done' ? '✓' : (cls === 'returned' ? '!' : i + 1);
+    const by = !mini && cls === 'done' && lastBy[s] ? `<span class="by">${esc(name(lastBy[s]))}</span>` : '';
+    return `<li class="${cls}"><span class="dot">${mark}</span>${s}${by}</li>`;
+  }).join('') + '</ol>';
+}
+
+/* ---------- top bar ---------- */
+function renderWho() {
+  const el = $('#who');
+  if (!me) { el.innerHTML = '<span class="muted">Not signed in</span>'; return; }
+  const what = isAdmin(me) ? 'Admin' : (me.authority ? me.authority + ' · ' + esc(me.team) : esc(me.role));
+  el.innerHTML = `<span>Signed in as <strong>${esc(name(me.id))}</strong> <span class="chip plain">${what}</span></span><button class="btn small" data-act="logout">Switch user</button>`;
+}
+
+/* ---------- login ---------- */
+function renderLogin() {
+  return `<section class="login">
+    <div style="display:grid;gap:6px"><h1>Who are you?</h1><p class="muted">Pick a person to sign in as. Try the same item as different people to see it move through the chain.</p></div>
+    <div class="people">${S.users.map(u => {
+      const tag = isAdmin(u) ? '<span class="chip">Admin</span>' : u.authority ? `<span class="chip">${u.authority}</span>` : '<span class="chip plain">No approval job</span>';
+      return `<button class="person" data-act="login" data-id="${u.id}" ${u.active ? '' : 'disabled'}>
+        <span class="name">${esc(u.first + ' ' + u.surname)}</span>
+        <span class="meta">${esc(u.position || 'No position')} · ${esc(u.team || 'No team')}</span>
+        <span>${u.active ? tag : '<span class="chip plain">Deactivated</span>'}</span>
+      </button>`;
+    }).join('')}</div>
+  </section>`;
+}
+
+/* ---------- admin ---------- */
+function renderAdmin() {
+  tab = tab || 'users';
+  const tabs = [['users', 'Users'], ['lists', 'Lists'], ['flow', 'Approval flow'], ['items', 'All items'], ['audit', 'Audit log']];
+  const gaps = gapCount();
+  let body = '';
+  if (tab === 'users') body = adminUsers();
+  if (tab === 'lists') body = adminLists();
+  if (tab === 'flow') body = adminFlow();
+  if (tab === 'items') body = itemList(S.items, 'No items yet.');
+  if (tab === 'audit') body = adminAudit();
+  return `<div style="display:grid;gap:4px"><h1>Admin panel</h1><p class="muted">Set up lists, create users, and give each user a team and an approval job.</p></div>
+    <nav class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${tab === k}" data-act="tab" data-tab="${k}">${l}${k === 'flow' && gaps ? `<span class="count" style="background:var(--warn)">${gaps}</span>` : ''}</button>`).join('')}</nav>
+    ${body}`;
+}
+
+function adminUsers() {
+  const rows = S.users.map(u => {
+    const needs = !isAdmin(u) && (!u.team || !u.authority) && u.role !== 'Viewer';
+    const status = !u.active ? '<span class="chip plain">Deactivated</span>' : (!u.team ? '<span class="chip warn">Needs assigning</span>' : '<span class="chip good">Active</span>');
+    return `<tr class="${u.active ? '' : 'inactive'}">
+      <td><strong>${esc(u.surname)}</strong> ${esc(u.first)}</td>
+      <td class="mono">${esc(u.username)}</td>
+      <td>${esc(u.role)}</td>
+      <td>${esc(u.position || '—')}</td>
+      <td>${esc(u.team || '—')}</td>
+      <td>${u.authority ? `<span class="chip">${u.authority}</span>` : '<span class="muted">—</span>'}</td>
+      <td>${status}</td>
+      <td><div class="row"><button class="btn small" data-act="assign" data-id="${u.id}">Assign</button>
+        ${u.id === me.id ? '' : `<button class="btn small ${u.active ? 'danger' : ''}" data-act="toggle-user" data-id="${u.id}">${u.active ? 'Deactivate' : 'Reactivate'}</button>`}</div></td>
+    </tr>`;
+  }).join('');
+  return `<div class="grid2">
+    <form class="card" id="add-user" novalidate>
+      <h2>Add new user</h2>
+      <div class="field"><label for="nu-surname">Surname</label><input id="nu-surname" name="surname" autocomplete="off"></div>
+      <div class="field"><label for="nu-first">First name</label><input id="nu-first" name="first" autocomplete="off"></div>
+      <div class="field"><label for="nu-username">Username</label><input id="nu-username" name="username" autocomplete="off"></div>
+      <div class="field"><label for="nu-email">Email</label><input id="nu-email" name="email" type="email" autocomplete="off"></div>
+      <div class="field"><label for="nu-phone">Phone number</label><input id="nu-phone" name="phone" autocomplete="off"></div>
+      <p class="error" id="nu-error" role="alert"></p>
+      <button class="btn primary" type="submit">Add user</button>
+      <p class="muted" style="font-size:13px">Next step: press Assign to give them a role, position, team and approval job.</p>
+    </form>
+    <div class="card">
+      <div class="card-head"><h2>User list</h2><span class="muted">${S.users.filter(u => u.active).length} active of ${S.users.length}</span></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Position</th><th>Team</th><th>Authority</th><th>Status</th><th></th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      <p class="muted" style="font-size:13px">Users are deactivated, not deleted, so their past approvals stay in the history.</p>
+    </div>
+  </div>`;
+}
+
+function adminLists() {
+  const list = (key, title, hint) => `<div class="card">
+    <div class="card-head"><h2>${title}</h2><span class="muted">${S[key].length}</span></div>
+    <p class="muted" style="font-size:13px">${hint}</p>
+    <ul style="margin:0;padding-left:18px;display:grid;gap:2px">${S[key].map(v => `<li>${esc(v)}</li>`).join('')}</ul>
+    <form class="row" data-form="add-${key}"><div class="field" style="flex:1"><label for="add-${key}">Add new</label><input id="add-${key}" autocomplete="off"></div><button class="btn" type="submit" style="align-self:end">Add</button></form>
+  </div>`;
+  return `<div class="grid3">
+    ${list('positions', 'Positions', 'Job titles people hold.')}
+    ${list('teams', 'Teams', 'Projects and departments. Each team has its own approval chain.')}
+    <div class="card">
+      <div class="card-head"><h2>Authorities</h2><span class="muted">5, fixed order</span></div>
+      <p class="muted" style="font-size:13px">The approval jobs. Each item goes through them in this order.</p>
+      <ol style="margin:0;padding-left:20px;display:grid;gap:6px">${STAGES.map((s, i) => `<li><strong>${s}</strong> <span class="muted">· ${STAGE_DO[i]}</span></li>`).join('')}</ol>
+      <div class="card" style="padding:14px;gap:6px;background:var(--bg)"><h3>System roles</h3><p class="muted" style="font-size:13px">What a person can do in the system, separate from their approval job.</p>
+      <ul style="margin:0;padding-left:18px">${ROLES.map(r => `<li>${r}</li>`).join('')}</ul></div>
+    </div>
+  </div>`;
+}
+
+function teamsInUse() { return S.teams.filter(t => S.users.some(u => u.active && u.team === t && u.authority)); }
+function gapCount() { return teamsInUse().reduce((n, t) => n + STAGES.filter(s => holders(t, s).length === 0).length, 0); }
+
+function adminFlow() {
+  const teams = teamsInUse();
+  if (!teams.length) return '<div class="empty">No team has anyone with an approval job yet. Assign users first.</div>';
+  return `<div class="note info">Every item goes Maker → Checker → Reviewer → Verifier → Approver inside its own team. Each person holds only one approval job, so nobody can approve the same item twice.</div>` +
+    teams.map(t => {
+      const missing = STAGES.filter(s => holders(t, s).length === 0);
+      return `<div class="card">
+        <div class="card-head"><h2>${esc(t)}</h2>${missing.length ? `<span class="chip warn">${missing.length} stage${missing.length > 1 ? 's' : ''} empty</span>` : '<span class="chip good">Complete</span>'}</div>
+        <div class="flow">${STAGES.map((s, i) => {
+          const h = holders(t, s);
+          return `<div class="stage ${h.length ? '' : 'gap'}"><span class="muted" style="font-size:12px">Step ${i + 1}</span><span class="s-name">${s}</span>${h.length ? h.map(u => `<span>${esc(u.first + ' ' + u.surname)}</span>`).join('') : '<span style="color:var(--warn);font-weight:500">Nobody assigned</span>'}</div>`;
+        }).join('')}</div>
+        ${missing.length ? `<p class="note">Items in ${esc(t)} will get stuck at ${missing.join(', ')}. Go to Users and assign someone.</p>` : ''}
+      </div>`;
+    }).join('');
+}
+
+function adminAudit() {
+  return `<div class="card"><div class="card-head"><h2>Audit log</h2><span class="muted">${S.audit.length} entries, newest first</span></div>
+    <div class="table-wrap"><table><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Details</th></tr></thead>
+    <tbody>${S.audit.map(a => `<tr><td class="mono">${esc(a.time)}</td><td>${esc(name(a.who))}</td><td>${esc(a.action)}</td><td style="white-space:normal">${esc(a.detail)}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+
+/* ---------- staff ---------- */
+function renderStaff() {
+  const waiting = S.items.filter(it => canAct(me, it));
+  const mine = S.items.filter(it => it.maker === me.id);
+  const returned = mine.filter(it => it.status === 'returned');
+  const tabs = [];
+  if (me.authority && me.authority !== 'Maker') tabs.push(['waiting', 'Waiting for me', waiting.length]);
+  if (me.authority === 'Maker') tabs.push(['mine', 'My items', returned.length]);
+  tabs.push(['all', 'All items', 0]);
+  if (!tab || !tabs.some(t => t[0] === tab)) tab = tabs[0][0];
+
+  let intro = '';
+  if (me.authority === 'Maker') intro = 'You create items and send them for approval. If someone sends one back, fix it and send it again.';
+  else if (me.authority) intro = `Your job is <strong>${me.authority}</strong> for ${esc(me.team)}: ${STAGE_DO[STAGES.indexOf(me.authority)].toLowerCase()}. Items show up here when they reach your stage.`;
+  else intro = 'You have no approval job yet, so you can only look at items. Ask an admin to assign you.';
+
+  let body = '';
+  if (tab === 'waiting') body = itemList(waiting, 'Nothing is waiting for you right now.');
+  if (tab === 'mine') body = `<div class="row" style="justify-content:space-between"><span class="muted">${mine.length} item${mine.length === 1 ? '' : 's'} you made${returned.length ? ` · <strong style="color:var(--bad)">${returned.length} sent back to you</strong>` : ''}</span><button class="btn primary" data-act="new-item">New item</button></div>` + itemList(mine.slice().sort((a, b) => (b.status === 'returned') - (a.status === 'returned')), 'You have not made any items yet. Press New item to start.');
+  if (tab === 'all') body = itemList(me.team ? S.items.filter(it => it.team === me.team) : S.items, 'No items yet.');
+
+  return `<div style="display:grid;gap:4px"><h1>My dashboard</h1><p class="muted">${intro}</p></div>
+    <nav class="tabs" role="tablist">${tabs.map(([k, l, n]) => `<button class="tab" role="tab" aria-selected="${tab === k}" data-act="tab" data-tab="${k}">${l}${n ? `<span class="count"${k === 'mine' ? ' style="background:var(--bad)"' : ''}>${n}</span>` : ''}</button>`).join('')}</nav>
+    ${body}`;
+}
+
+function itemList(list, emptyMsg) {
+  if (!list.length) return `<div class="empty">${emptyMsg}</div>`;
+  return `<div class="items">${list.map(it => `<button class="item" data-act="open" data-id="${it.id}">
+      <span style="display:grid;gap:2px"><span class="title">${esc(it.title)}</span><span class="sub"><span class="mono">${it.id}</span> · ${esc(it.team)} · ${money(it.amount)} · by ${esc(name(it.maker))}</span></span>
+      <span style="display:grid;gap:8px;justify-items:end">${statusChip(it)}${tracker(it, true)}</span>
+    </button>`).join('')}</div>`;
+}
+
+/* ---------- modals ---------- */
+function openModal(html) { $('#sheet').innerHTML = html; $('#modal').hidden = false; const f = $('#sheet').querySelector('textarea, input, select, button'); if (f) f.focus(); }
+function closeModal() { $('#modal').hidden = true; $('#sheet').innerHTML = ''; }
+
+function openItem(id) {
+  const it = S.items.find(i => i.id === id);
+  let action = '';
+  if (canAct(me, it)) {
+    const last = it.stage === 4;
+    action = `<div class="action-box"><h3>Your turn: ${me.authority}</h3>
+      <div class="field"><label for="act-comment">Comment ${'<span class="muted">(needed if you send it back)</span>'}</label><textarea id="act-comment" placeholder="Write a note for the next person or for the Maker"></textarea></div>
+      <p class="error" id="act-error" role="alert"></p>
+      <div class="row"><button class="btn good" data-act="approve" data-id="${it.id}">${last ? 'Give final approval' : 'Approve and send to ' + STAGES[it.stage + 1]}</button>
+      <button class="btn bad" data-act="reject" data-id="${it.id}">Send back to Maker</button></div></div>`;
+  } else if (blockedBySelf(me, it)) {
+    action = `<div class="action-box blocked"><h3>You cannot act on this item</h3><p>You already worked on it at another stage. Someone else must do the ${STAGES[it.stage]} step.</p></div>`;
+  } else if (canResubmit(me, it)) {
+    const back = it.history.filter(h => h.action === 'returned').pop();
+    action = `<div class="action-box blocked"><h3>Sent back to you by ${esc(name(back.who))} (${back.stage})</h3><p>“${esc(back.comment)}”</p>
+      <div class="field"><label for="rs-title">Title</label><input id="rs-title" value="${esc(it.title)}"></div>
+      <div class="field"><label for="rs-amount">Amount (USD)</label><input id="rs-amount" type="number" min="1" value="${it.amount}"></div>
+      <div class="field"><label for="rs-desc">Description</label><textarea id="rs-desc">${esc(it.desc)}</textarea></div>
+      <div class="field"><label for="rs-comment">What did you fix?</label><input id="rs-comment" placeholder="Example: Venue quote attached"></div>
+      <p class="error" id="rs-error" role="alert"></p>
+      <div class="row"><button class="btn primary" data-act="resubmit" data-id="${it.id}">Fix and send again</button></div></div>`;
+  } else if (it.status === 'progress' && holders(it.team, STAGES[it.stage]).length === 0) {
+    action = `<div class="note">Nobody in ${esc(it.team)} has the ${STAGES[it.stage]} job, so this item is stuck. An admin needs to assign someone.</div>`;
+  } else if (it.status === 'progress') {
+    action = `<p class="muted">Waiting for ${STAGES[it.stage]}: ${holders(it.team, STAGES[it.stage]).map(u => esc(u.first + ' ' + u.surname)).join(', ')}.</p>`;
+  }
+  const verb = { submitted: 'submitted', approved: 'approved', returned: 'sent it back', final: 'gave final approval', resubmitted: 'fixed and sent again' };
+  openModal(`<div class="sheet-head"><div style="display:grid;gap:6px;justify-items:start"><span class="mono muted">${it.id}</span><h2 id="modal-title">${esc(it.title)}</h2>${statusChip(it)}</div><button class="btn small" data-act="close">Close</button></div>
+    <dl class="facts"><div><dt>Amount</dt><dd>${money(it.amount)}</dd></div><div><dt>Team</dt><dd>${esc(it.team)}</dd></div><div><dt>Made by</dt><dd>${esc(name(it.maker))}</dd></div></dl>
+    <p>${esc(it.desc)}</p>
+    ${tracker(it, false)}
+    ${action}
+    <div style="display:grid;gap:10px"><h3>History</h3><ul class="history">${it.history.map(h => `<li><span class="bar ${h.action}"></span><span><strong>${esc(name(h.who))}</strong> <span class="muted">(${h.stage})</span> ${verb[h.action]} <span class="mono muted">· ${esc(h.time)}</span>${h.comment ? `<br><span class="c">“${esc(h.comment)}”</span>` : ''}</span></li>`).join('')}</ul></div>`);
+}
+
+function newItemModal() {
+  openModal(`<div class="sheet-head"><h2 id="modal-title">New item</h2><button class="btn small" data-act="close">Close</button></div>
+    <p class="muted">It goes to the Checker in ${esc(me.team)} as soon as you submit it.</p>
+    <div class="field"><label for="ni-title">Title</label><input id="ni-title" placeholder="Example: Motorbike repair"></div>
+    <div class="field"><label for="ni-amount">Amount (USD)</label><input id="ni-amount" type="number" min="1"></div>
+    <div class="field"><label for="ni-desc">Description</label><textarea id="ni-desc" placeholder="What is it for?"></textarea></div>
+    <p class="error" id="ni-error" role="alert"></p>
+    <div class="row"><button class="btn primary" data-act="create-item">Submit for approval</button></div>`);
+}
+
+function assignModal(id) {
+  const u = user(id);
+  openModal(`<div class="sheet-head"><div style="display:grid;gap:4px"><span class="muted">Assign</span><h2 id="modal-title">${esc(u.first + ' ' + u.surname)}</h2></div><button class="btn small" data-act="close">Close</button></div>
+    <div class="grid3" style="gap:14px">
+      <div class="field"><label for="as-role">Role (system access)</label><select id="as-role">${opts(ROLES, u.role)}</select></div>
+      <div class="field"><label for="as-position">Position</label><select id="as-position">${opts(S.positions, u.position, 'None')}</select></div>
+      <div class="field"><label for="as-team">Team</label><select id="as-team">${opts(S.teams, u.team, 'None')}</select></div>
+      <div class="field"><label for="as-auth">Authority (approval job)</label><select id="as-auth">${opts(STAGES, u.authority, 'None')}</select></div>
+    </div>
+    <p class="note info">A person holds one approval job only. That stops one person from approving the same item twice.</p>
+    <p class="error" id="as-error" role="alert"></p>
+    <div class="row"><button class="btn primary" data-act="save-assign" data-id="${u.id}">Save</button></div>`);
+}
+
+/* ---------- render ---------- */
+function render() {
+  renderWho();
+  $('#app').innerHTML = !me ? renderLogin() : isAdmin(me) ? renderAdmin() : renderStaff();
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b) { if (e.target === $('#modal')) closeModal(); return; }
+  const id = b.dataset.id;
+  switch (b.dataset.act) {
+    case 'login': me = user(id); tab = null; render(); toast('Signed in as ' + name(id)); break;
+    case 'logout': me = null; tab = null; closeModal(); render(); break;
+    case 'reset': S = seed(); me = null; tab = null; closeModal(); render(); toast('Demo reset'); break;
+    case 'tab': tab = b.dataset.tab; render(); break;
+    case 'open': openItem(id); break;
+    case 'close': closeModal(); break;
+    case 'new-item': newItemModal(); break;
+    case 'assign': assignModal(id); break;
+    case 'toggle-user': {
+      const u = user(id); u.active = !u.active;
+      log(u.active ? 'Reactivated user' : 'Deactivated user', u.first + ' ' + u.surname);
+      render(); toast((u.active ? 'Reactivated ' : 'Deactivated ') + u.first + ' ' + u.surname); break;
+    }
+    case 'save-assign': {
+      const u = user(id);
+      const role = $('#as-role').value, position = $('#as-position').value, team = $('#as-team').value, auth = $('#as-auth').value;
+      if (auth && !team) { $('#as-error').textContent = 'Pick a team first. An approval job always belongs to a team.'; return; }
+      const changes = [];
+      if (u.role !== role) changes.push('role ' + role);
+      if (u.position !== position) changes.push('position ' + (position || 'none'));
+      if (u.team !== team) changes.push('team ' + (team || 'none'));
+      if (u.authority !== auth) changes.push('authority ' + (auth || 'none'));
+      Object.assign(u, { role, position, team, authority: auth });
+      if (me.id === u.id) me = u;
+      if (changes.length) log('Assigned user', u.first + ' ' + u.surname + ': ' + changes.join(', '));
+      closeModal(); render(); toast(changes.length ? 'Saved' : 'Nothing changed'); break;
+    }
+    case 'create-item': {
+      const title = $('#ni-title').value.trim(), amount = Number($('#ni-amount').value), desc = $('#ni-desc').value.trim();
+      if (!title || !(amount > 0)) { $('#ni-error').textContent = 'Add a title and an amount above 0.'; return; }
+      const it = { id: 'PR-' + String(S.nextItem++).padStart(3, '0'), title, amount, team: me.team, maker: me.id, desc: desc || 'No description.', stage: 1, status: 'progress', actors: [me.id],
+        history: [{ who: me.id, stage: 'Maker', action: 'submitted', comment: '', time: now() }] };
+      S.items.unshift(it); log('Submitted item', it.id + ' ' + it.title);
+      closeModal(); render(); toast(it.id + ' sent to the Checker'); break;
+    }
+    case 'approve': case 'reject': {
+      const it = S.items.find(i => i.id === id);
+      if (!canAct(me, it)) return;
+      const comment = $('#act-comment').value.trim();
+      const stage = STAGES[it.stage];
+      if (b.dataset.act === 'reject') {
+        if (!comment) { $('#act-error').textContent = 'Write why you are sending it back, so the Maker knows what to fix.'; return; }
+        it.history.push({ who: me.id, stage, action: 'returned', comment, time: now() });
+        it.status = 'returned'; it.stage = 0;
+        log('Sent back as ' + stage, it.id + ' ' + it.title + ': ' + comment);
+        toast(it.id + ' sent back to ' + name(it.maker));
+      } else if (it.stage === 4) {
+        it.history.push({ who: me.id, stage, action: 'final', comment, time: now() });
+        it.actors.push(me.id); it.status = 'approved';
+        log('Final approval', it.id + ' ' + it.title);
+        toast(it.id + ' is approved');
+      } else {
+        it.history.push({ who: me.id, stage, action: 'approved', comment, time: now() });
+        it.actors.push(me.id); it.stage++;
+        log('Approved as ' + stage, it.id + ' ' + it.title);
+        toast(it.id + ' sent to ' + STAGES[it.stage]);
+      }
+      closeModal(); render(); break;
+    }
+    case 'resubmit': {
+      const it = S.items.find(i => i.id === id);
+      const title = $('#rs-title').value.trim(), amount = Number($('#rs-amount').value), comment = $('#rs-comment').value.trim();
+      if (!title || !(amount > 0)) { $('#rs-error').textContent = 'Add a title and an amount above 0.'; return; }
+      if (!comment) { $('#rs-error').textContent = 'Say what you fixed, so the Checker knows.'; return; }
+      Object.assign(it, { title, amount, desc: $('#rs-desc').value.trim() || it.desc, status: 'progress', stage: 1, actors: [me.id] });
+      it.history.push({ who: me.id, stage: 'Maker', action: 'resubmitted', comment, time: now() });
+      log('Sent item again', it.id + ' ' + it.title + ': ' + comment);
+      closeModal(); render(); toast(it.id + ' sent to the Checker again'); break;
+    }
+  }
+});
+
+document.addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target;
+  if (f.id === 'add-user') {
+    const v = k => f.elements[k].value.trim();
+    const err = $('#nu-error');
+    if (!v('surname') || !v('first') || !v('username') || !v('email') || !v('phone')) { err.textContent = 'Fill in all five fields.'; return; }
+    if (!/^\S+@\S+\.\S+$/.test(v('email'))) { err.textContent = 'The email address does not look right.'; return; }
+    if (S.users.some(u => u.username.toLowerCase() === v('username').toLowerCase())) { err.textContent = 'That username is taken. Pick another.'; return; }
+    const u = { id: 'u' + S.nextUser++, surname: v('surname'), first: v('first'), username: v('username'), email: v('email'), phone: v('phone'), role: 'Viewer', position: '', team: '', authority: '', active: true };
+    S.users.push(u); log('Created user', u.first + ' ' + u.surname + ' (' + u.username + ')');
+    render(); toast('Added ' + u.first + ' ' + u.surname + '. Now press Assign.');
+  }
+  const m = f.dataset.form && f.dataset.form.match(/^add-(positions|teams)$/);
+  if (m) {
+    const input = f.querySelector('input'); const val = input.value.trim();
+    if (!val) return;
+    if (S[m[1]].some(x => x.toLowerCase() === val.toLowerCase())) { toast(val + ' is already on the list'); return; }
+    S[m[1]].push(val); log('Added to ' + m[1], val); render(); toast('Added ' + val);
+  }
+});
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) closeModal(); });
+
+render();
+</script>
+</body>
+</html>

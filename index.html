@@ -291,7 +291,7 @@ function renderWho() {
 /* ---------- login ---------- */
 function renderLogin() {
   return `<section class="login">
-    <div style="display:grid;gap:6px"><h1>Who are you?</h1><p class="muted">Pick a person to sign in as. Try the same item as different people to see it move through the chain.</p></div>
+    <div style="display:grid;gap:6px"><h1>Who are you?</h1><p class="muted">Every request goes through 5 steps, each done by a different person: <strong>Maker → Checker → Reviewer → Verifier → Approver</strong>.</p><p class="muted">Pick a person below to sign in as them. Sign in as each one in turn to watch a request move along.</p></div>
     <div class="people">${S.users.map(u => {
       const tag = isAdmin(u) ? '<span class="chip">Admin</span>' : u.authority ? `<span class="chip">${u.authority}</span>` : '<span class="chip plain">No approval job</span>';
       return `<button class="person" data-act="login" data-id="${u.id}" ${u.active ? '' : 'disabled'}>
@@ -306,7 +306,7 @@ function renderLogin() {
 /* ---------- admin ---------- */
 function renderAdmin() {
   tab = tab || 'users';
-  const tabs = [['users', 'Users'], ['lists', 'Lists'], ['flow', 'Approval flow'], ['items', 'All items'], ['audit', 'Audit log']];
+  const tabs = [['users', 'Users'], ['lists', 'Teams and positions'], ['flow', 'Approval flow'], ['items', 'All items'], ['audit', 'Audit log']];
   const gaps = gapCount();
   let body = '';
   if (tab === 'users') body = adminUsers();
@@ -321,40 +321,24 @@ function renderAdmin() {
 
 function adminUsers() {
   const rows = S.users.map(u => {
-    const needs = !isAdmin(u) && (!u.team || !u.authority) && u.role !== 'Viewer';
     const status = !u.active ? '<span class="chip plain">Deactivated</span>' : (!u.team ? '<span class="chip warn">Needs assigning</span>' : '<span class="chip good">Active</span>');
     return `<tr class="${u.active ? '' : 'inactive'}">
-      <td><strong>${esc(u.surname)}</strong> ${esc(u.first)}</td>
-      <td class="mono">${esc(u.username)}</td>
-      <td>${esc(u.role)}</td>
-      <td>${esc(u.position || '—')}</td>
-      <td>${esc(u.team || '—')}</td>
+      <td><strong>${esc(u.surname)}</strong> ${esc(u.first)}<br><span class="mono muted">${esc(u.username)}</span></td>
+      <td>${esc(u.team || '—')}<br><span class="muted" style="font-size:13px">${esc(u.position || 'No position')}</span></td>
       <td>${u.authority ? `<span class="chip">${u.authority}</span>` : '<span class="muted">—</span>'}</td>
+      <td>${esc(u.role)}</td>
       <td>${status}</td>
       <td><div class="row" style="flex-wrap:nowrap"><button class="btn small" data-act="assign" data-id="${u.id}">Assign</button>
         ${u.id === me.id ? '' : `<button class="btn small ${u.active ? 'danger' : ''}" data-act="toggle-user" data-id="${u.id}">${u.active ? 'Deactivate' : 'Reactivate'}</button>`}</div></td>
     </tr>`;
   }).join('');
-  return `<div class="grid2">
-    <form class="card" id="add-user" novalidate>
-      <h2>Add new user</h2>
-      <div class="field"><label for="nu-surname">Surname</label><input id="nu-surname" name="surname" autocomplete="off"></div>
-      <div class="field"><label for="nu-first">First name</label><input id="nu-first" name="first" autocomplete="off"></div>
-      <div class="field"><label for="nu-username">Username</label><input id="nu-username" name="username" autocomplete="off"></div>
-      <div class="field"><label for="nu-email">Email</label><input id="nu-email" name="email" type="email" autocomplete="off"></div>
-      <div class="field"><label for="nu-phone">Phone number</label><input id="nu-phone" name="phone" autocomplete="off"></div>
-      <p class="error" id="nu-error" role="alert"></p>
-      <button class="btn primary" type="submit">Add user</button>
-      <p class="muted" style="font-size:13px">Next step: press Assign to give them a role, position, team and approval job.</p>
-    </form>
-    <div class="card">
-      <div class="card-head"><h2>User list</h2><span class="muted">${S.users.filter(u => u.active).length} active of ${S.users.length}</span></div>
+  return `<div class="card">
+      <div class="card-head"><div style="display:grid;gap:2px"><h2>Users</h2><span class="muted" style="font-size:13px">${S.users.filter(u => u.active).length} active of ${S.users.length}</span></div><button class="btn primary" data-act="add-user">Add user</button></div>
       <div class="table-wrap"><table>
-        <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Position</th><th>Team</th><th>Authority</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>Name</th><th>Team</th><th>Approval job</th><th>Role</th><th>Status</th><th></th></tr></thead>
         <tbody>${rows}</tbody></table></div>
       <p class="muted" style="font-size:13px">Users are deactivated, not deleted, so their past approvals stay in the history.</p>
-    </div>
-  </div>`;
+    </div>`;
 }
 
 function adminLists() {
@@ -368,7 +352,7 @@ function adminLists() {
     ${list('positions', 'Positions', 'Job titles people hold.')}
     ${list('teams', 'Teams', 'Projects and departments. Each team has its own approval chain.')}
     <div class="card">
-      <div class="card-head"><h2>Authorities</h2><span class="muted">5, fixed order</span></div>
+      <div class="card-head"><h2>Approval jobs</h2><span class="muted">5, fixed order</span></div>
       <p class="muted" style="font-size:13px">The approval jobs. Each item goes through them in this order.</p>
       <ol style="margin:0;padding-left:20px;display:grid;gap:6px">${STAGES.map((s, i) => `<li><strong>${s}</strong> <span class="muted">· ${STAGE_DO[i]}</span></li>`).join('')}</ol>
       <div class="card" style="padding:14px;gap:6px;background:var(--bg)"><h3>System roles</h3><p class="muted" style="font-size:13px">What a person can do in the system, separate from their approval job.</p>
@@ -486,6 +470,21 @@ function newItemModal() {
     <div class="row"><button class="btn primary" data-act="create-item">Submit for approval</button></div>`);
 }
 
+function addUserModal() {
+  openModal(`<div class="sheet-head"><h2 id="modal-title">Add user</h2><button class="btn small" data-act="close">Close</button></div>
+    <form id="add-user" novalidate style="display:grid;gap:14px">
+      <div class="grid3" style="gap:14px">
+        <div class="field"><label for="nu-surname">Surname</label><input id="nu-surname" name="surname" autocomplete="off"></div>
+        <div class="field"><label for="nu-first">First name</label><input id="nu-first" name="first" autocomplete="off"></div>
+        <div class="field"><label for="nu-username">Username</label><input id="nu-username" name="username" autocomplete="off"></div>
+        <div class="field"><label for="nu-email">Email</label><input id="nu-email" name="email" type="email" autocomplete="off"></div>
+        <div class="field"><label for="nu-phone">Phone number</label><input id="nu-phone" name="phone" autocomplete="off"></div>
+      </div>
+      <p class="error" id="nu-error" role="alert"></p>
+      <div class="row"><button class="btn primary" type="submit">Next: give them a team and job</button></div>
+    </form>`);
+}
+
 function assignModal(id) {
   const u = user(id);
   openModal(`<div class="sheet-head"><div style="display:grid;gap:4px"><span class="muted">Assign</span><h2 id="modal-title">${esc(u.first + ' ' + u.surname)}</h2></div><button class="btn small" data-act="close">Close</button></div>
@@ -493,7 +492,7 @@ function assignModal(id) {
       <div class="field"><label for="as-role">Role (system access)</label><select id="as-role">${opts(ROLES, u.role)}</select></div>
       <div class="field"><label for="as-position">Position</label><select id="as-position">${opts(S.positions, u.position, 'None')}</select></div>
       <div class="field"><label for="as-team">Team</label><select id="as-team">${opts(S.teams, u.team, 'None')}</select></div>
-      <div class="field"><label for="as-auth">Authority (approval job)</label><select id="as-auth">${opts(STAGES, u.authority, 'None')}</select></div>
+      <div class="field"><label for="as-auth">Approval job</label><select id="as-auth">${opts(STAGES, u.authority, 'None')}</select></div>
     </div>
     <p class="note info">A person holds one approval job only. That stops one person from approving the same item twice.</p>
     <p class="error" id="as-error" role="alert"></p>
@@ -519,6 +518,7 @@ document.addEventListener('click', e => {
     case 'open': openItem(id); break;
     case 'close': closeModal(); break;
     case 'new-item': newItemModal(); break;
+    case 'add-user': addUserModal(); break;
     case 'assign': assignModal(id); break;
     case 'toggle-user': {
       const u = user(id); u.active = !u.active;
@@ -533,7 +533,7 @@ document.addEventListener('click', e => {
       if (u.role !== role) changes.push('role ' + role);
       if (u.position !== position) changes.push('position ' + (position || 'none'));
       if (u.team !== team) changes.push('team ' + (team || 'none'));
-      if (u.authority !== auth) changes.push('authority ' + (auth || 'none'));
+      if (u.authority !== auth) changes.push('approval job ' + (auth || 'none'));
       Object.assign(u, { role, position, team, authority: auth });
       if (me.id === u.id) me = u;
       if (changes.length) log('Assigned user', u.first + ' ' + u.surname + ': ' + changes.join(', '));
@@ -595,7 +595,7 @@ document.addEventListener('submit', e => {
     if (S.users.some(u => u.username.toLowerCase() === v('username').toLowerCase())) { err.textContent = 'That username is taken. Pick another.'; return; }
     const u = { id: 'u' + S.nextUser++, surname: v('surname'), first: v('first'), username: v('username'), email: v('email'), phone: v('phone'), role: 'Viewer', position: '', team: '', authority: '', active: true };
     S.users.push(u); log('Created user', u.first + ' ' + u.surname + ' (' + u.username + ')');
-    render(); toast('Added ' + u.first + ' ' + u.surname + '. Now press Assign.');
+    render(); assignModal(u.id); toast('Added ' + u.first + ' ' + u.surname);
   }
   const m = f.dataset.form && f.dataset.form.match(/^add-(positions|teams)$/);
   if (m) {

@@ -331,7 +331,7 @@ function adminUsers() {
       <td>${esc(u.team || '—')}</td>
       <td>${u.authority ? `<span class="chip">${u.authority}</span>` : '<span class="muted">—</span>'}</td>
       <td>${status}</td>
-      <td><div class="row"><button class="btn small" data-act="assign" data-id="${u.id}">Assign</button>
+      <td><div class="row" style="flex-wrap:nowrap"><button class="btn small" data-act="assign" data-id="${u.id}">Assign</button>
         ${u.id === me.id ? '' : `<button class="btn small ${u.active ? 'danger' : ''}" data-act="toggle-user" data-id="${u.id}">${u.active ? 'Deactivate' : 'Reactivate'}</button>`}</div></td>
     </tr>`;
   }).join('');
